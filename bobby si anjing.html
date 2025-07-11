@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ngobrol Sama Bobby 🐶 (Suara)</title>
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #eef; }
+    .container { max-width: 600px; margin: auto; padding: 20px; }
+    .header { text-align: center; }
+    .header img { width: 100px; }
+    .chat-box {
+      background: #fff;
+      border-radius: 15px;
+      padding: 15px;
+      height: 400px;
+      overflow-y: auto;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 80%;
+    }
+    .user { background-color: #daf1ff; align-self: flex-end; }
+    .bobby { background-color: #fff8dc; align-self: flex-start; }
+    .input-area { display: flex; gap: 10px; }
+    input { flex: 1; padding: 10px; border-radius: 999px; border: 1px solid #ccc; }
+    button { padding: 10px 20px; border: none; border-radius: 999px; background: gold; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="https://i.ibb.co/Qc5sMDq/bobby-cartoon.png" alt="Bobby" />
+      <h2>Ngobrol Sama Bobby 🐶</h2>
+    </div>
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="input-area">
+      <input type="text" id="inputMessage" placeholder="Tanya sesuatu ke Bobby..." />
+      <button onclick="sendMessage()">Kirim</button>
+    </div>
+  </div>
+
+  <script>
+    const OPENAI_API_KEY = "YOUR_API_KEY_HERE";
+    const chatBox = document.getElementById("chatBox");
+    const input = document.getElementById("inputMessage");
+
+    function addMessage(text, sender) {
+      const msg = document.createElement("div");
+      msg.className = `message ${sender}`;
+      msg.textContent = text;
+      chatBox.appendChild(msg);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function speak(text) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'id-ID';
+      utter.rate = 1;
+      utter.pitch = 1.1;
+      speechSynthesis.speak(utter);
+    }
+
+    async function sendMessage() {
+      const userText = input.value.trim();
+      if (!userText) return;
+
+      addMessage(userText, "user");
+      input.value = "";
+      addMessage("Bobby sedang mikir... 🐾", "bobby");
+
+      try {
+        const reply = await fetchGPT(userText);
+        document.querySelectorAll(".bobby:last-child")[0].remove();
+        addMessage(reply, "bobby");
+        speak(reply);
+      } catch (e) {
+        addMessage("Maaf, Bobby lagi tidur... 💤", "bobby");
+      }
+    }
+
+    async function fetchGPT(text) {
+      const res = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENAI_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: "Kamu adalah seekor anjing lucu bernama Bobby. Kamu suka bermain, ramah, dan suka menggonggong. Jawablah dengan lucu dan seperti anjing."
+            },
+            { role: "user", content: text }
+          ],
+          temperature: 0.9
+        })
+      });
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "Wuff... nggak ngerti!";
+    }
+
+    window.onload = () => {
+      addMessage("Halo! Aku Bobby, anjing pintar! 🐶", "bobby");
+      speak("Halo! Aku Bobby, anjing pintar! Wuff wuff!");
+    };
+  </script>
+</body>
+</html>
